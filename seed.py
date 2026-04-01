@@ -39,6 +39,8 @@ students_data = [
     ("22801", "Shahwaj Alam", "RIT", ""),
     ("22802", "Shahid(Romeo)", "RIT", ""),
     ("22803", "Rizwan(Emp.)", "RIT", ""),
+    ("22370", "Zishan Ahmad", "Computer Science", ""),
+    ("22375","Tauqeer Alam", "Computer Science", "")
 ]
 for roll, name, dept, email in students_data:
     Student.objects.get_or_create(roll_number=roll, defaults={"name": name, "department": dept, "email": email})
