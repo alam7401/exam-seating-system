@@ -1,0 +1,316 @@
+{% extends 'seating/base.html' %}
+{% block title %}Seating — {{ exam.name }}{% endblock %}
+{% block page_title %}Seat Arrangement{% endblock %}
+{% block badge %}{{ exam.name|upper }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .seat-grid-wrapper {
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+  .seat-grid {
+    display: inline-grid;
+    gap: 8px;
+    padding: 24px;
+  }
+  .seat {
+    width: 82px;
+    height: 72px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    text-align: center;
+    padding: 6px 4px;
+  }
+  .seat:hover { border-color: var(--accent); transform: scale(1.04); }
+  .seat.occupied {
+    background: rgba(16,185,129,0.12);
+    border-color: rgba(16,185,129,0.4);
+  }
+  .seat.occupied:hover { border-color: var(--accent3); }
+  .seat-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .seat-roll {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70px;
+  }
+  .seat-name {
+    font-size: 0.62rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70px;
+    margin-top: 2px;
+  }
+  .seat.empty .seat-empty-icon { font-size: 1rem; color: var(--border); }
+  .seat.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(240,192,64,0.3); }
+
+  .legend { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+  .legend-box { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; }
+  .legend-box.empty { border-color: var(--border); background: var(--surface2); }
+  .legend-box.occupied { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); }
+  .legend-box.selected { border-color: var(--accent); background: rgba(240,192,64,0.1); }
+
+  .assign-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+  }
+  .assign-panel .seat-preview {
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .assign-panel .seat-preview.selected-preview {
+    border-color: var(--accent);
+    border-style: solid;
+    background: rgba(240,192,64,0.05);
+  }
+
+  .info-strip {
+    display: flex; gap: 16px; flex-wrap:wrap;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .info-item { display: flex; flex-direction:column; gap:2px; }
+  .info-item small { font-family: var(--font-mono); font-size: 0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .info-item strong { font-size: 0.95rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Exam info strip -->
+<div class="info-strip">
+  <div class="info-item">
+    <small>Exam</small>
+    <strong>{{ exam.name }}</strong>
+  </div>
+  <div class="info-item">
+    <small>Date</small>
+    <strong>{{ exam.date }}</strong>
+  </div>
+  <div class="info-item">
+    <small>Time</small>
+    <strong>{{ exam.time|time:"H:i" }}</strong>
+  </div>
+  <div class="info-item">
+    <small>Hall</small>
+    <strong>{{ exam.hall.name }}</strong>
+  </div>
+  <div class="info-item">
+    <small>Capacity</small>
+    <strong>{{ total_seats }} seats</strong>
+  </div>
+  <div class="info-item">
+    <small>Occupied</small>
+    <strong style="color:var(--accent3)">{{ occupied }}</strong>
+  </div>
+  <div class="info-item">
+    <small>Vacant</small>
+    <strong style="color:var(--accent)">{{ total_seats|add:"-"|add:occupied }}</strong>
+  </div>
+</div>
+
+<!-- Action bar -->
+<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center">
+  <form method="post" action="{% url 'auto_assign' exam.id %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-green" onclick="return confirm('Auto-assign all students randomly?')">⚡ Auto-Assign All</button>
+  </form>
+  <a href="{% url 'clear_seating' exam.id %}" class="btn btn-danger" onclick="return confirm('Clear all seat assignments?')">🗑 Clear All</a>
+  <button class="btn btn-ghost" onclick="printSeating()">🖨 Print</button>
+  <a href="{% url 'api_seating' exam.id %}" class="btn btn-ghost" target="_blank">📡 JSON API</a>
+  <div style="margin-left:auto" class="legend">
+    <div class="legend-item"><div class="legend-box empty"></div> Empty</div>
+    <div class="legend-item"><div class="legend-box occupied"></div> Occupied</div>
+    <div class="legend-item"><div class="legend-box selected"></div> Selected</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 280px; gap:20px; align-items:start">
+  <!-- Seat Grid -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🏛 {{ exam.hall.name }}</span>
+      <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--muted)">{{ exam.hall.rows }} rows × {{ exam.hall.columns }} cols</span>
+    </div>
+
+    <!-- Column headers -->
+    <div style="padding:0 24px 0">
+      <div style="display:flex; padding-left: 8px">
+        {% for col in exam.hall.columns|make_list %}{% endfor %}
+      </div>
+    </div>
+
+    <div class="seat-grid-wrapper">
+      <div class="seat-grid" style="grid-template-columns: repeat({{ exam.hall.columns }}, 82px)">
+        {% for row in grid %}
+          {% for seat in row %}
+          <div class="seat {% if seat.arrangement %}occupied{% else %}empty{% endif %}"
+               id="seat-{{ seat.row }}-{{ seat.col }}"
+               data-row="{{ seat.row }}"
+               data-col="{{ seat.col }}"
+               data-label="{{ seat.label }}"
+               data-occupied="{% if seat.arrangement %}true{% else %}false{% endif %}"
+               onclick="selectSeat(this)">
+            <div class="seat-label">{{ seat.label }}</div>
+            {% if seat.arrangement %}
+              <div class="seat-roll">{{ seat.arrangement.student.roll_number }}</div>
+              <div class="seat-name">{{ seat.arrangement.student.name|truncatechars:12 }}</div>
+            {% else %}
+              <div class="seat-empty-icon">○</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- FRONT OF HALL indicator -->
+    <div style="text-align:center; padding:8px; border-top:1px solid var(--border); font-family:var(--font-mono); font-size:0.65rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase">
+      ▲ Front of Hall / Examiner's Desk
+    </div>
+  </div>
+
+  <!-- Assign Panel -->
+  <div class="assign-panel">
+    <div style="font-weight:800; font-size:0.95rem; margin-bottom:14px">🎯 Assign Seat</div>
+
+    <div class="seat-preview" id="seatPreview">
+      <div style="color:var(--muted); font-size:0.85rem">Click a seat on the grid</div>
+      <div style="font-size:1.6rem; margin-top:6px">↙</div>
+    </div>
+
+    <form method="post" action="{% url 'assign_seat' exam.id %}" id="assignForm">
+      {% csrf_token %}
+      <input type="hidden" name="seat_row" id="seatRow">
+      <input type="hidden" name="seat_col" id="seatCol">
+      <div class="form-group">
+        <label>Select Student</label>
+        <select name="student_id" id="studentSelect" required>
+          <option value="">— Choose student —</option>
+          {% for student in students_without_seat %}
+          <option value="{{ student.id }}">{{ student.roll_number }} — {{ student.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%" id="assignBtn" disabled>Assign to Seat</button>
+    </form>
+
+    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px">
+      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em">Current Assignments</div>
+      <div style="max-height: 260px; overflow-y:auto" id="assignmentsList">
+        {% for arr in arrangements %}
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:0.82rem">
+          <span class="badge badge-yellow" style="font-size:0.65rem">{{ arr.seat_label }}</span>
+          <span style="flex:1; margin:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ arr.student.name }}</span>
+          <span style="color:var(--muted); font-family:var(--font-mono); font-size:0.65rem">{{ arr.student.roll_number }}</span>
+        </div>
+        {% empty %}
+        <div style="color:var(--muted); font-size:0.82rem; text-align:center; padding:12px">No assignments yet</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedSeat = null;
+
+function selectSeat(el) {
+  // Deselect previous
+  if (selectedSeat) selectedSeat.classList.remove('selected');
+
+  selectedSeat = el;
+  el.classList.add('selected');
+
+  const row = el.dataset.row;
+  const col = el.dataset.col;
+  const label = el.dataset.label;
+  const occupied = el.dataset.occupied === 'true';
+
+  document.getElementById('seatRow').value = row;
+  document.getElementById('seatCol').value = col;
+
+  const preview = document.getElementById('seatPreview');
+  preview.classList.add('selected-preview');
+  preview.innerHTML = `
+    <div style="font-family:var(--font-mono); font-size:1.5rem; font-weight:700; color:var(--accent)">${label}</div>
+    <div style="font-size:0.78rem; color:${occupied ? 'var(--accent3)' : 'var(--muted)'}; margin-top:4px">${occupied ? '● Occupied' : '○ Empty'}</div>
+  `;
+  document.getElementById('assignBtn').disabled = false;
+}
+
+function printSeating() {
+  const examName = "{{ exam.name }}";
+  const date = "{{ exam.date }}";
+  const hall = "{{ exam.hall.name }}";
+
+  const assignments = [
+    {% for arr in arrangements %}
+    { seat: "{{ arr.seat_label }}", roll: "{{ arr.student.roll_number }}", name: "{{ arr.student.name }}", dept: "{{ arr.student.department }}" },
+    {% endfor %}
+  ];
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head>
+    <title>Seating — ${examName}</title>
+    <style>
+      body { font-family: 'Courier New', monospace; padding: 24px; }
+      h1 { font-size: 1.4rem; margin-bottom: 4px; }
+      .meta { color: #666; font-size: 0.85rem; margin-bottom: 20px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; font-size: 0.85rem; }
+      th { background: #f0f0f0; font-weight: bold; }
+      tr:nth-child(even) td { background: #f9f9f9; }
+    </style>
+    </head><body>
+    <h1>${examName}</h1>
+    <div class="meta">Hall: ${hall} | Date: ${date}</div>
+    <table>
+      <thead><tr><th>Seat</th><th>Roll No.</th><th>Name</th><th>Department</th></tr></thead>
+      <tbody>
+        ${assignments.sort((a,b)=>a.seat.localeCompare(b.seat)).map(a=>`<tr><td>${a.seat}</td><td>${a.roll}</td><td>${a.name}</td><td>${a.dept||'—'}</td></tr>`).join('')}
+        ${assignments.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#999">No assignments</td></tr>' : ''}
+      </tbody>
+    </table>
+    <p style="margin-top:16px; color:#999; font-size:0.75rem">Generated by ExamSeat Pro</p>
+    </body></html>
+  `);
+  win.document.close();
+  win.print();
+}
+</script>
+{% endblock %}

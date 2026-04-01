@@ -1,0 +1,86 @@
+{% extends 'seating/base.html' %}
+{% block title %}Exams — ExamSeat{% endblock %}
+{% block page_title %}Exams{% endblock %}
+{% block badge %}EXAMS{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:flex-end; margin-bottom:20px">
+  <button class="btn btn-primary" onclick="document.getElementById('addExamModal').classList.add('open')">+ Schedule Exam</button>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📋 All Exams</span>
+    <span class="badge badge-gray">{{ exams.count }} Total</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Exam Name</th><th>Date</th><th>Time</th><th>Hall</th><th>Capacity</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for exam in exams %}
+        <tr>
+          <td style="color:var(--muted); font-family:var(--font-mono)">{{ forloop.counter }}</td>
+          <td style="font-weight:700">{{ exam.name }}</td>
+          <td><span class="badge badge-yellow">{{ exam.date }}</span></td>
+          <td><span class="badge badge-blue">{{ exam.time|time:"H:i" }}</span></td>
+          <td>{{ exam.hall.name }}</td>
+          <td><span class="badge badge-green">{{ exam.hall.capacity }} seats</span></td>
+          <td style="display:flex; gap:6px; align-items:center">
+            <a href="{% url 'seating_view' exam.id %}" class="btn btn-primary btn-sm">🗺 Seating</a>
+            <form method="post" action="{% url 'exam_delete' exam.id %}" style="display:inline" onsubmit="return confirm('Delete this exam?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:40px; color:var(--muted)">
+            No exams scheduled. Create your first exam!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Exam Modal -->
+<div class="modal-overlay" id="addExamModal">
+  <div class="modal">
+    <div class="modal-title">📋 Schedule New Exam</div>
+    <form method="post" action="{% url 'exam_create' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Exam Name</label>
+        <input type="text" name="name" placeholder="e.g. Mathematics — Semester 4" required>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" name="date" required>
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" name="time" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Exam Hall</label>
+        <select name="hall" required>
+          <option value="">— Select Hall —</option>
+          {% for hall in halls %}
+          <option value="{{ hall.id }}">{{ hall.name }} ({{ hall.capacity }} seats)</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('addExamModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Exam</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

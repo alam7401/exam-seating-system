@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>{% block title %}ExamSeat{% endblock %}</title>
+  {% load static %}
+  <link rel="icon" type="image/x-icon" href="{% static 'alam.ico' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  
+ 
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: linear-gradient(to left top, #c6dfc3, #d4d5b0, #e4c8a6, #efbba9, #f0b0b7, #e9aeca, #d7b1dd, #bbb6eb, #9cc1f3, #80caf0, #71d1e3, #78d5cf);
+      --surface: linear-gradient(to bottom right,  #fdfcfb, #e2d1c3);
+      --surface2: radial-gradient(circl, #121414, #353839, #5c6062, #878b8e, #b5b9bd, #bdc4cc, #c5d0db, #cddbea, #a9c7d9, #82b3c4, #5aa0ab, #328d8d);
+      --border: #ffffff;
+      --accent: #ffb700c0;
+      --accent2: #387ff0;
+      --accent3: #10b981;
+      --danger: #ef4444;
+      --text: #281919;
+      --muted: #000000;
+      --font-display: 'Syne' serif;
+      --font-mono: 'Space Mono';
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo h1 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-logo p {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .sidebar-nav { padding: 16px 12px; flex: 1; }
+    .nav-section-label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 8px 12px 6px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+    .nav-link:hover, .nav-link.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .nav-link.active { color: var(--accent); }
+    .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    /* MAIN */
+    .main {
+      margin-left: 260px;
+      flex: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar-title { font-size: 1.1rem; font-weight: 700; }
+    .topbar-badge {
+      background: var(--accent);
+      color: #000;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .content { padding: 32px; flex: 1; }
+
+    /* MESSAGES */
+    .messages { margin-bottom: 20px; }
+    .msg {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .msg.success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
+    .msg.error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title { font-size: 1rem; font-weight: 700; }
+    .card-body { padding: 24px; }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .stat-card:nth-child(1)::before { background: var(--accent); }
+    .stat-card:nth-child(2)::before { background: var(--accent2); }
+    .stat-card:nth-child(3)::before { background: var(--accent3); }
+    .stat-card:nth-child(4)::before { background: #a78bfa; }
+    .stat-num {
+      font-family: var(--font-mono);
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat-icon {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      font-size: 1.8rem;
+      opacity: 0.15;
+    }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.15s;
+      font-family: var(--font-display);
+    }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: #ffb700c0; }
+    .btn-blue { background: var(--accent2); color: #fff; }
+    .btn-blue:hover { background: #2563eb; }
+    .btn-green { background: var(--accent3); color: #fff; }
+    .btn-green:hover { background: #059669; }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+    .btn-danger:hover { background: rgba(196, 73, 73, 0.32); }
+    .btn-ghost { background: var(--surface2); color: var(--text); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+
+    /* FORM */
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select option { background: var(--surface2); }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 440px;
+      animation: slideUp 0.2s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* BADGE */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .badge-yellow { background: rgba(210, 205, 115, 0.5); color: var(--accent); }
+    .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent2); }
+    .badge-green { background: rgba(16, 185, 129, 0.17); color: var(--accent3); }
+    .badge-gray { background: var(--surface2); color: var(--muted); }
+
+    /* GRID LAYOUT */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h1>Exam<span>Seat</span></h1>
+      <p>Seating Management System</p>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="nav-icon">⊞</span> Dashboard
+      </a>
+      <div class="nav-section-label" style="margin-top:12px">Management</div>
+      <a href="{% url 'hall_list' %}" class="nav-link {% if 'hall' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon">🏛</span> Halls
+      </a>
+      <a href="{% url 'student_list' %}" class="nav-link {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon">🎓</span> Students
+      </a>
+      <a href="{% url 'exam_list' %}" class="nav-link {% if 'exam' in request.resolver_match.url_name and 'seating' not in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon">📋</span> Exams
+      </a>
+      <div class="nav-section-label" style="margin-top:12px">Seating</div>
+      <a href="{% url 'exam_list' %}" class="nav-link {% if 'seating' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon">🗺</span> Seat Arrangements
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      @alam &nbsp;·&nbsp; @ExamSeat @Indo Global
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+      <span class="topbar-badge">{% block badge %}SYSTEM ACTIVE{% endblock %}</span>
+    </div>
+    <div class="content">
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+        <div class="msg {{ message.tags }}">
+          {% if message.tags == 'success' %}✓{% else %}✕{% endif %}
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

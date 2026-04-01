@@ -1,0 +1,91 @@
+{% extends 'seating/base.html' %}
+{% block title %}Dashboard — ExamSeat{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block badge %}OVERVIEW{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">🏛</div>
+    <div class="stat-num">{{ total_halls }}</div>
+    <div class="stat-label">Exam Halls</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📋</div>
+    <div class="stat-num">{{ total_exams }}</div>
+    <div class="stat-label">Scheduled Exams</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🎓</div>
+    <div class="stat-num">{{ total_students }}</div>
+    <div class="stat-label">Students</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🗺</div>
+    <div class="stat-num">{{ total_arrangements }}</div>
+    <div class="stat-label">Seat Assignments</div>
+  </div>
+</div>
+
+<div class="two-col" style="gap:20px; align-items:start">
+  <!-- Recent Exams -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 Recent Exams</span>
+      <a href="{% url 'exam_list' %}" class="btn btn-ghost btn-sm">View All →</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Exam</th><th>Date</th><th>Hall</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          {% for exam in exams|slice:":5" %}
+          <tr>
+            <td style="font-weight:600">{{ exam.name }}</td>
+            <td><span class="badge badge-blue">{{ exam.date }}</span></td>
+            <td>{{ exam.hall.name }}</td>
+            <td>
+              <a href="{% url 'seating_view' exam.id %}" class="btn btn-sm btn-primary">View Seats</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="color:var(--muted); text-align:center; padding:24px">No exams yet. <a href="{% url 'exam_list' %}" style="color:var(--accent)">Create one →</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div style="display:flex; flex-direction:column; gap:16px">
+    <div class="card">
+      <div class="card-header"><span class="card-title">⚡ Quick Actions</span></div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:10px">
+        <a href="{% url 'hall_list' %}" class="btn btn-ghost" style="justify-content:center">🏛 Manage Halls</a>
+        <a href="{% url 'student_list' %}" class="btn btn-ghost" style="justify-content:center">🎓 Manage Students</a>
+        <a href="{% url 'exam_list' %}" class="btn btn-primary" style="justify-content:center">📋 Create New Exam</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">🎓 Recent Students</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Roll</th><th>Name</th><th>Dept</th></tr></thead>
+          <tbody>
+            {% for student in students|slice:":4" %}
+            <tr>
+              <td><span class="badge badge-yellow">{{ student.roll_number }}</span></td>
+              <td>{{ student.name }}</td>
+              <td style="color:var(--muted);font-size:0.8rem">{{ student.department|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="color:var(--muted); text-align:center; padding:16px">No students yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

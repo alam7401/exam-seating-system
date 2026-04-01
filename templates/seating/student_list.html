@@ -1,0 +1,111 @@
+{% extends 'seating/base.html' %}
+{% block title %}Students — ExamSeat{% endblock %}
+{% block page_title %}Students{% endblock %}
+{% block badge %}STUDENTS{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:flex-end; margin-bottom:20px; gap:10px">
+  <button class="btn btn-primary" onclick="document.getElementById('addStudentModal').classList.add('open')">+ Add Student</button>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">🎓 All Students</span>
+    <span class="badge badge-gray">{{ students.count }} Total</span>
+  </div>
+  <div class="card-body" style="padding:0">
+    <!-- Search bar -->
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border)">
+      <input type="text" id="searchInput" placeholder="🔍 Search by name or roll number..." style="max-width:380px" oninput="filterStudents()">
+    </div>
+    <div class="table-wrap">
+      <table id="studentTable">
+        <thead>
+          <tr><th>Roll No.</th><th>Name</th><th>Email</th><th>Department</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr class="student-row">
+            <td><span class="badge badge-yellow">{{ student.roll_number }}</span></td>
+            <td style="font-weight:600">{{ student.name }}</td>
+            <td style="color:var(--muted); font-size:0.85rem">{{ student.email|default:"—" }}</td>
+            <td>{% if student.department %}<span class="badge badge-blue">{{ student.department }}</span>{% else %}—{% endif %}</td>
+            <td>
+              <form method="post" action="{% url 'student_delete' student.id %}" style="display:inline" onsubmit="return confirm('Delete {{ student.name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center; padding:40px; color:var(--muted)">
+              No students found. Add your first student!
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-overlay" id="addStudentModal">
+  <div class="modal">
+    <div class="modal-title">🎓 Add New Student</div>
+    <form method="post" action="{% url 'student_create' %}">
+      {% csrf_token %}
+      <div class="two-col">
+        <div class="form-group">
+          <label>Roll Number</label>
+          <input type="text" name="roll_number" placeholder="e.g. 22300" required>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <!--<input type="text" name="department" placeholder="e.g. Computer Science">-->
+          <select id="course" name="course" style="color:black;">
+              <option value="">— Choose Department —</option>
+              <option value="cse">Computer Science</option>
+              <option value="cse">Civil</option>
+              <option value="me">Mechanical</option>
+              <option value="ece">Electronics</option>
+              <option value="ott">OTT</option>
+              <option value="rit">RIT</option>
+              <option value="bca">BCA</option>
+              <option value="pharma">Pharma</option>
+               <option value="bba">BBA</option>
+              <option value="diopoma">Diploma</option>
+
+          </select>
+          
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="name" placeholder="Student full name" required>
+      </div>
+      <div class="form-group">
+        <label>Email (optional)</label>
+        <input type="email" name="email" placeholder="student@university.edu">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('addStudentModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterStudents() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.student-row').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
